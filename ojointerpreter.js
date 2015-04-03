@@ -3,7 +3,13 @@
   2015-04-02
 
   provides:
-    OjoError, Ojo
+    OjoError, 
+    Ojo
+      .get(needle, haystack)
+
+      .find(needle, value, haystack)
+
+      .set(needle, value, haystack)
 
   author: Chad Angelelli <chad.angelelli@gmail.com>
 
@@ -114,12 +120,14 @@
     }; // end Ojo.get()
 
     // . .. ... .. . .. ... .. . .. ... .. . .. ... .. . .. ... .. .
-    this.set = function(needle, haystack, value) {
-      var res;
+    this.find = function(needle, value, haystack) {
+    var path, res;
 
-      return res;
-    }; // end Ojo.set()
+    path = self.get(needle, haystack);
 
+    return res;
+    }; // end Ojo.find()
+    
     // . .. ... .. . .. ... .. . .. ... .. . .. ... .. . .. ... .. .
     this.__simpleLookup = function(components, haystack) {
       var path;
