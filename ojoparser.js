@@ -74,10 +74,11 @@
 var ojoparser = (function(){
 var parser = {trace: function trace() { },
 yy: {},
-symbols_: {"error":2,"ojo":3,"path":4,"EOF":5,"DOT":6,"ID":7,"INT":8,"LBRACK":9,"RBRACK":10,"$accept":0,"$end":1},
-terminals_: {2:"error",5:"EOF",6:"DOT",7:"ID",8:"INT",9:"LBRACK",10:"RBRACK"},
-productions_: [0,[3,2],[4,3],[4,3],[4,4],[4,4],[4,1]],
-performAction: function anonymous(yytext, yyleng, yylineno, yy, yystate /* action[1] */, $$ /* vstack */, _$ /* lstack */) {
+symbols_: {"error":2,"ojo":3,"path":4,"EOF":5,"DOT":6,"ID":7,"INT":8,"LBRACK":9,"RBRACK":10,"STR":11,"$accept":0,"$end":1},
+terminals_: {2:"error",5:"EOF",6:"DOT",7:"ID",8:"INT",9:"LBRACK",10:"RBRACK",11:"STR"},
+productions_: [0,[3,2],[4,3],[4,3],[4,4],[4,4],[4,4],[4,1]],
+performAction: function anonymous(yytext, yyleng, yylineno, yy, yystate /* action[1] */, $$ /* vstack */, _$ /* lstack */
+/**/) {
 /* this == yyval */
 
 var $0 = $$.length - 1;
@@ -88,15 +89,17 @@ case 2: this.$ = $$[$0-2]; this.$.push(new  Name($$[$0], loc(_$[$0-2], _$[$0])))
 break;
 case 3: this.$ = $$[$0-2]; this.$.push(new Slice($$[$0], loc(_$[$0-2], _$[$0]))); 
 break;
-case 4: this.$ = $$[$0-3]; this.$.push(new Slice($$[$0-1], loc(_$[$0-3], _$[$0]))); 
+case 4: this.$ = $$[$0-3]; this.$.push(new Slice($$[$0-1], "int", loc(_$[$0-3], _$[$0]))); 
 break;
-case 5: this.$ = $$[$0-3]; this.$.push(new Slice($$[$0-1], loc(_$[$0-3], _$[$0]))); 
+case 5: this.$ = $$[$0-3]; this.$.push(new Slice($$[$0-1], "str", loc(_$[$0-3], _$[$0]))); 
 break;
-case 6: this.$ = [new Name($$[$0], loc(_$[$0], _$[$0]))]; 
+case 6: this.$ = $$[$0-3]; this.$.push(new Slice($$[$0-1], "path", loc(_$[$0-3], _$[$0]))); 
+break;
+case 7: this.$ = [new Name($$[$0], loc(_$[$0], _$[$0]))]; 
 break;
 }
 },
-table: [{3:1,4:2,7:[1,3]},{1:[3]},{5:[1,4],6:[1,5],9:[1,6]},{5:[2,6],6:[2,6],9:[2,6],10:[2,6]},{1:[2,1]},{7:[1,7],8:[1,8]},{4:10,7:[1,3],8:[1,9]},{5:[2,2],6:[2,2],9:[2,2],10:[2,2]},{5:[2,3],6:[2,3],9:[2,3],10:[2,3]},{10:[1,11]},{6:[1,5],9:[1,6],10:[1,12]},{5:[2,4],6:[2,4],9:[2,4],10:[2,4]},{5:[2,5],6:[2,5],9:[2,5],10:[2,5]}],
+table: [{3:1,4:2,7:[1,3]},{1:[3]},{5:[1,4],6:[1,5],9:[1,6]},{5:[2,7],6:[2,7],9:[2,7],10:[2,7]},{1:[2,1]},{7:[1,7],8:[1,8]},{4:11,7:[1,3],8:[1,9],11:[1,10]},{5:[2,2],6:[2,2],9:[2,2],10:[2,2]},{5:[2,3],6:[2,3],9:[2,3],10:[2,3]},{10:[1,12]},{10:[1,13]},{6:[1,5],9:[1,6],10:[1,14]},{5:[2,4],6:[2,4],9:[2,4],10:[2,4]},{5:[2,5],6:[2,5],9:[2,5],10:[2,5]},{5:[2,6],6:[2,6],9:[2,6],10:[2,6]}],
 defaultActions: {4:[2,1]},
 parseError: function parseError(str, hash) {
     if (hash.recoverable) {
@@ -106,7 +109,7 @@ parseError: function parseError(str, hash) {
     }
 },
 parse: function parse(input) {
-    var self = this, stack = [0], tstack = [], vstack = [null], lstack = [], table = this.table, yytext = '', yylineno = 0, yyleng = 0, recovering = 0, TERROR = 2, EOF = 1;
+    var self = this, stack = [0], vstack = [null], lstack = [], table = this.table, yytext = '', yylineno = 0, yyleng = 0, recovering = 0, TERROR = 2, EOF = 1;
     var args = lstack.slice.call(arguments, 1);
     this.lexer.setInput(input);
     this.lexer.yy = this.yy;
@@ -130,12 +133,8 @@ parse: function parse(input) {
     }
     function lex() {
         var token;
-        token = tstack.shift() || self.lexer.lex() || EOF;
+        token = self.lexer.lex() || EOF;
         if (typeof token !== 'number') {
-            if (token instanceof Array) {
-                tstack = tstack.concat(token.splice(1));
-                token = token[0];
-            }
             token = self.symbols_[token] || token;
         }
         return token;
@@ -250,8 +249,9 @@ function Name(value, loc) {
   this.loc = loc;
 }
 
-function Slice(value, loc) {
+function Slice(value, type, loc) {
   this.value = value;
+  this.type = type;
   this.loc = loc;
 }
 
@@ -583,7 +583,8 @@ stateStackSize:function stateStackSize() {
         return this.conditionStack.length;
     },
 options: {},
-performAction: function anonymous(yy,yy_,$avoiding_name_collisions,YY_START) {
+performAction: function anonymous(yy,yy_,$avoiding_name_collisions,YY_START
+/**/) {
 
 var YYSTATE=YY_START;
 switch($avoiding_name_collisions) {
@@ -597,13 +598,13 @@ case 3:return "RBRACK";
 break;
 case 4:return "ID";
 break;
-case 5:return "STR";
+case 5:return "INT";
 break;
-case 6:return "INT";
+case 6:yy_.yytext = yy_.yytext.slice(1, -1); return "STR";
 break;
 }
 },
-rules: [/^(?:$)/,/^(?:\.)/,/^(?:\[)/,/^(?:\])/,/^(?:([a-zA-Z_][a-zA-Z0-9_]{0,254}))/,/^(?:(('(\\'|[^"'"]|")*')|("(\\"|[^'"']|')*")))/,/^(?:(0|[1-9][0-9]*))/],
+rules: [/^(?:$)/,/^(?:\.)/,/^(?:\[)/,/^(?:\])/,/^(?:([a-zA-Z_][a-zA-Z0-9_]{0,254}))/,/^(?:(0|[1-9][0-9]*))/,/^(?:(('(\\'|[^"'"]|")*')|("(\\"|[^'"']|')*")))/],
 conditions: {"INITIAL":{"rules":[0,1,2,3,4,5,6],"inclusive":true}}
 };
 return lexer;

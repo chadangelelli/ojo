@@ -18,7 +18,9 @@ var parse_tests = [
       'a.b.0',
       'a.b[0].c',
       'a.b[c]',
-      'a.b[c[d[e]]]'
+      'a.b[c[d[e]]]',
+      'a.b.c["12345b7e9012345a7fa01234"]',
+      "a.b['c']",
     ]; 
 var num_tests = parse_tests.length;
 var res, expr, i, success;
@@ -65,7 +67,9 @@ var test_data = {
     b: {
       c: [
         { d: 1 },
-        { e: 2 }
+        { e: 2 },
+        { "123456789012345678901234": 3 },
+        { "testKey": 4 }
       ]
     }
   }
@@ -77,6 +81,8 @@ var tests = [
   ['get', 'a.b.c', test_data, test_data.a.b.c],
   ['get', 'a.b.c.0', test_data, test_data.a.b.c[0]],
   ['get', 'a.b.c[0]', test_data, test_data.a.b.c[0]],
+  ['get', "a.b.c[2]['123456789012345678901234']", test_data, test_data.a.b.c[2]['123456789012345678901234']],
+  ['get', "a.b.c[3].testKey", test_data, test_data.a.b.c[3].testKey],
   ['get', 'a.b[z].d', test_data, test_data.a.b.c.d]
 ];
 var i, test, res, success;
@@ -114,3 +120,5 @@ for (i=0, l=tests.length; i < l; i++) {
   print('\t=>\t' + JSON.stringify(res));
   print(' ');
 }
+
+print("\n\tResult:\n\t\tpassed: " + passed + "\n\t\tfailed: " + failed + "\n");

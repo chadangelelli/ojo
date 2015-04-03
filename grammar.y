@@ -9,8 +9,9 @@ ojo
 path
   : path DOT ID             { $$ = $1; $$.push(new  Name($3, loc(@1, @3))); }
   | path DOT INT            { $$ = $1; $$.push(new Slice($3, loc(@1, @3))); }
-  | path LBRACK INT RBRACK  { $$ = $1; $$.push(new Slice($3, loc(@1, @4))); }
-  | path LBRACK path RBRACK { $$ = $1; $$.push(new Slice($3, loc(@1, @4))); }
+  | path LBRACK INT RBRACK  { $$ = $1; $$.push(new Slice($3, "int", loc(@1, @4))); }
+  | path LBRACK STR RBRACK  { $$ = $1; $$.push(new Slice($3, "str", loc(@1, @4))); }
+  | path LBRACK path RBRACK { $$ = $1; $$.push(new Slice($3, "path", loc(@1, @4))); }
   | ID                      { $$ = [new Name($1, loc(@1, @1))]; }
   ;
 
@@ -25,8 +26,9 @@ function Name(value, loc) {
   this.loc = loc;
 }
 
-function Slice(value, loc) {
+function Slice(value, type, loc) {
   this.value = value;
+  this.type = type;
   this.loc = loc;
 }
 
