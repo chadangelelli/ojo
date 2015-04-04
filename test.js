@@ -3,6 +3,15 @@
 var ojoparser = require('./ojoparser');
 var Ojo = require('./ojo').Ojo;
 
+String.prototype.intpol = function(o) {
+  return this.replace(/{([^{}]*)}/g, function (a, b) {
+    var r = o[b];
+    return typeof r === 'string' || typeof r === 'number' ? r : a;
+  });
+};
+
+JSON.dump = JSON.stringify;
+
 function print() {
   Function.apply.call(console.log, console, arguments);
 }
@@ -11,7 +20,7 @@ var ojo = new Ojo({ allowEval: true });
 
 print('\n==================================================== parse tests:\n');
 
-var parse_tests = [
+var parseTests = [
       'a.b.c',
       'aaa.bbb.c3',
       'a.b[0]',
@@ -22,13 +31,13 @@ var parse_tests = [
       'a.b.c["12345b7e9012345a7fa01234"]',
       "a.b['c']",
     ]; 
-var num_tests = parse_tests.length;
+var numTests = parseTests.length;
 var res, expr, i, success;
 var passed = 0;
 var failed = 0;
 
-for (i=0; i < num_tests; i++) {
-  expr = parse_tests[i];
+for (i=0; i < numTests; i++) {
+  expr = parseTests[i];
 
   try {
     res = ojo.parser.parse(expr);
@@ -42,7 +51,7 @@ for (i=0; i < num_tests; i++) {
 
   print('\ttest ' + (i+1) + ' .................. ' + (success ? 'OK' : 'FAIL!'));
   print('\t<=\t' + expr);
-  print('\t=>\t' + JSON.stringify(res));
+  print('\t=>\t' + JSON.dump(res));
   print(' ');
 }
 
@@ -55,6 +64,7 @@ print("\n\tResult:\n\t\tpassed: " + passed + "\n\t\tfailed: " + failed + "\n");
 
 print('\n==================================================== interpreter tests:\n');
 
+
 if (typeof window === 'undefined')
   window = {};
 
@@ -62,7 +72,7 @@ window.x = 0;
 window.y = 1;
 window.z = 'c';
 
-var test_data = {
+var testData = {
   a: {
     b: {
       c: [
@@ -77,76 +87,112 @@ var test_data = {
   y: [1, 2, 3,3,3, 4,4, 5],
   z: ['a', 1, 'b', 2, 'c', 3,3,3, 'd','d', 4,4, 'e', 5, true, false, false],
   contacts: [
-    { name: 'alice'  , email: 'alice@test.com'   },
-    { name: 'bob'    , email: 'bob@test.com'     },
-    { name: 'charlie', email: 'charlie@test.com' }
+    { name: 'Alice'  , email: 'alice@test.com'   },
+    { name: 'Bob'    , email: 'bob@test.com'     },
+    { name: 'Charlie', email: 'charlie@test.com' }
   ]
 };
+
+print("\ttest data:\n", JSON.dump(testData, null, 4));
+print("\n--------------------------------------------- >>\n");
 
 var i, test, res, success;
 var passed = 0;
 var failed = 0;
 
-var intepreter_tests = [ 
+var intepreterTests = [ 
   { fn: 'get', 
     needle: 'a', 
-    haystack: test_data, 
-    match: test_data.a
+    haystack: testData, 
+    match: testData.a
   },
   { fn: 'get', 
     needle: 'a.b',
-    haystack: test_data, 
-    match: test_data.a.b
+    haystack: testData, 
+    match: testData.a.b
   },
   { fn: 'get', 
     needle: 'a.b.c', 
-    haystack: test_data, 
-    match: test_data.a.b.c
+    haystack: testData, 
+    match: testData.a.b.c
   },
   { fn: 'get', 
     needle: 'a.b.c.0', 
-    haystack: test_data, 
-    match: test_data.a.b.c[0]
+    haystack: testData, 
+    match: testData.a.b.c[0]
   },
   { fn: 'get', 
     needle: 'a.b.c[0]', 
-    haystack: test_data, 
-    match: test_data.a.b.c[0]
+    haystack: testData, 
+    match: testData.a.b.c[0]
   },
   { fn: 'get', 
     needle: "a.b.c[2]['123456789012345678901234']", 
-    haystack: test_data, 
-    match: test_data.a.b.c[2]['123456789012345678901234']
+    haystack: testData, 
+    match: testData.a.b.c[2]['123456789012345678901234']
   },
   { fn: 'get',
     needle: "a.b.c[3].testKey", 
-    haystack: test_data, 
-    match: test_data.a.b.c[3].testKey
+    haystack: testData, 
+    match: testData.a.b.c[3].testKey
   },
-  { fn: 'find',
+  { fn: 'filter',
     needle: 'x',
-    haystack: test_data,
+    haystack: testData,
     value: 'a',
     match: ['a']
-  }
+  },
+  { fn: 'filter',
+    needle: 'x',
+    haystack: testData,
+    value: 'c',
+    match: ['c', 'c', 'c']
+  },
+  { fn: 'filter',
+    needle: 'z',
+    haystack: testData,
+    value: /c|3/,
+    match: ['c', 3, 3, 3]
+  },
+  { fn: 'filter',
+    needle: 'contacts',
+    haystack: testData,
+    key: 'name',
+    value: 'Alice',
+    match: [testData.contacts[0]]
+  },
+  { fn: 'filter',
+    needle: 'contacts',
+    haystack: testData,
+    key: 'name',
+    value: 'Charlie',
+    match: [testData.contacts[2]]
+  },
+  { fn: 'filter',
+    needle: 'contacts',
+    haystack: testData,
+    key: 'email',
+    value: /test\.com$/,
+    match: testData.contacts
+  },
 ];
 
-for (i=0, l=intepreter_tests.length; i < l; i++) {
-  test = intepreter_tests[i]; 
+for (i=0, l=intepreterTests.length; i < l; i++) {
+  test = intepreterTests[i]; 
 
   try {
     res = ojo.get(test.needle, test.haystack);
     if (test.fn == 'get') {
       res = ojo.results();
-    } else if (test.fn == 'find') {
+    } else if (test.fn == 'filter') {
       if (typeof test.key !== 'undefined') {
-        res = ojo.find(test.key, test.value).results();
+        res = ojo.filter(test.key, test.value).results();
       } else {
-        res = ojo.find(test.value).results();
+        res = ojo.filter(test.value).results();
       }
     }
 
-    if (typeof res !== 'undefined' && JSON.stringify(test.match) === JSON.stringify(res)) {
+    if (typeof res !== 'undefined' && JSON.dump(test.match) === JSON.dump(res)) {
       success = true;
       passed++;
     } else {
@@ -159,20 +205,38 @@ for (i=0, l=intepreter_tests.length; i < l; i++) {
     failed++;
   }
  
-  print('\ttest ' + (i+1) + ' .................. ' + (success ? 'OK' : 'EPIC FAIL!') + ' (algorithm: ' + ojo.algorithm + ') ');
+  print('\ttest ' + (i+1) + ' .................. ' + (success ? 'OK' : 'EPIC FAIL!') + ' (lookup algorithm: ' + ojo.algorithm + ') ');
 
   if (test.fn == 'get') {
-    print('\t<=\tget() -> "' + test.needle + '" in ' + JSON.stringify(test.haystack));
+    if (test.needle.indexOf('"') > -1)
+      print("\t<=\tojo.get('{needle}', testData).results()".intpol(test));
+    else
+      print('\t<=\tojo.get("{needle}", testData).results()'.intpol(test));
 
-  } else if (test.fn == 'find') {
+  } else if (test.fn == 'filter') {
+    var str = '';
+
+    if (test.needle.indexOf('"') > -1)
+      str += "\t<=\tojo.get('{needle}', testData)".intpol(test);
+    else
+      str += '\t<=\tojo.get("{needle}", testData)'.intpol(test);
+
     if (typeof test.key !== 'undefined') {
-      print('\t<=\tfind() -> (' + test.needle + ' -> ' + test.key + ' == ' + test.value + ') in ' + JSON.stringify(test.haystack));
+      if (test.value instanceof RegExp)
+        str += '.filter("' + test.key + '", ' + test.value.toString() + ').results()';
+      else
+        str += '.filter("{key}", "{value}").results()'.intpol(test);
     } else {
-      print('\t<=\tfind() -> (' + test.needle + ' has "' + test.value + '") in ' + JSON.stringify(test.haystack));
+      if (test.value instanceof RegExp)
+        str += '.filter(' + test.value.toString() + ').results()';
+      else
+        str += '.filter("{value}").results()'.intpol(test);
     }
+
+    print(str);
   }
 
-  print('\t=>\t' + JSON.stringify(res));
+  print('\t=>\t' + JSON.dump(res));
   print(' ');
 }
 

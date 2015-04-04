@@ -37,7 +37,7 @@
     this.options       = options || {};
 
     // . .. ... .. . .. ... .. . .. ... .. . .. ... .. . .. ... .. .
-    if ( ! self.isServerSide)
+    if (!self.isServerSide)
       this.parser = ojoparser;
     else if (typeof ojoparser !== 'undefined')
       this.parser = ojoparser;
@@ -52,6 +52,7 @@
     this.algorithm;
     this.ir;
     this.path;
+    this.resultSet;
     this.numResults;
 
     // . .. ... .. . .. ... .. . .. ... .. . .. ... .. . .. ... .. .
@@ -63,12 +64,13 @@
       self.algorithm     = '';
       self.ir            = [];
       self.path          = undefined;
+      self.resultSet     = [];
       self.numResults    = 0;
     }; // end Ojo.initVars()
 
     // . .. ... .. . .. ... .. . .. ... .. . .. ... .. . .. ... .. .
     this.get = function(needle, haystack) {
-      if ( ! needle.length)
+      if (!needle.length)
         throw new OjoError('Invalid Ojo needle "{needle}"'.intpol(self));
 
       // reset vars.
@@ -104,76 +106,56 @@
         self.get(_n, self.haystack);
       }
 
+      if (self.path)
+        self.resultSet = self.path;
+      else
+        return;
       return self;
     }; // end Ojo.get()
 
     // . .. ... .. . .. ... .. . .. ... .. . .. ... .. . .. ... .. .
     this.results = function() {
-      return self.path;
+      return self.resultSet;
     };
 
     // . .. ... .. . .. ... .. . .. ... .. . .. ... .. . .. ... .. .
-    this.find = function(key_or_value, value) {
-      var key, _isArr, _isObj, i, k, e, res;
+    this.filter = function(keyOrVal, val) {
+      var key, _isArr, _isObj, res;
 
-      if (typeof value !== 'undefined')
-        key = key_or_value;
-      else
-        value = key_or_value;
+      if (!self.resultSet)
+        throw new OjoError('No result set for Ojo.filter(). Call Ojo.get() first');
 
-      if ( ! self.path)
-        throw new OjoError('No result set for Find! Call Ojo.get first');
+      _isObj = isObj(self.resultSet);
+      _isArr = !_isObj && isArr(self.resultSet);
 
-      _isObj = isObj(self.path);
-      _isArr = ! _isObj && isArr(self.path);
-
-      if ( ! _isArr && ! _isObj)
+      if (!_isArr && !_isObj)
         throw new OjoError('Find requires an array or object');
 
-      /*
-      res = [];
+      if (typeof val !== 'undefined')
+        key = keyOrVal;
+      else
+        val = keyOrVal;
+
       if (_isArr) {
-        if (key) {
-          if ( ! isObj(self.path[0]))
-            throw new OjoError('key/value can only be passed to Find for an array of objects');
+        if (typeof key === 'undefined')
+          res = self.__filterArray(val); 
+        else
+          res = self.__filterArrayOfObjects(key, val);
 
-          // loop list
-            // check if element is an object. throw error on false
-        } else {
-          i = 0;
-          while (e = self.path[i]) {
-            i++;
-          }
-        }
-      } else { // _isObj
-        print("OBJ");
+        if (!res)
+          return;
+
+        self.resultSet = res;
+
+      } else if (key in self.resultSet && self.resultSet[key] == val) {
+        res = self.resultSet[key];
       }
-      */
 
-      /*
-      var path, target, i, k, e, res;
-     
-      path = self.get(needle, haystack, true);
-
-      print('needle: ', needle);
-      print('value: ', value);
-      print('type: ', typeof path[0][path[1]]);
-      jprint(path);
-    
-      if (path) {
-        target = path[0][path[1]];
-        if (isObj(target)) {
-          print('OBJECT');
-        } else if (isArr(target)) {
-          print('ARRAY');
-        } else {
-          throw new OjoError('Find function only works on arrays and objects. ("{needle}")'.intpol(self));
-        }
-      }
-      */
+      if (!res)
+        return;
 
       return self;
-    }; // end Ojo.find()
+    }; // end Ojo.filter()
     
     // . .. ... .. . .. ... .. . .. ... .. . .. ... .. . .. ... .. .
     this.__simpleLookup = function(components, haystack) {
@@ -200,7 +182,7 @@
       path = haystack;
 
       while (c = components[i]) {
-        if ( ! (c in path)) {
+        if (!(c in path)) {
           path = undefined;
           break;
         }
@@ -210,6 +192,64 @@
 
       return path;
     }; // end Ojo.__loopLookup()
+
+    // . .. ... .. . .. ... .. . .. ... .. . .. ... .. . .. ... .. .
+    this.__filterArray = function(val) {
+      var i, e, res;
+
+      i = 0;
+      res = [];
+      if (val instanceof RegExp) {
+        while (e = self.resultSet[i]) {
+          if (val.test(e))
+            res.push(e);
+          i++;
+        }
+      } else {
+        while (e = self.resultSet[i]) {
+          if (e == val)
+            res.push(e);
+          i++;
+        }
+      }
+
+      if (res.length == 0)
+        return;
+      return res;
+    } // end Ojo.__filterArray()
+
+    // . .. ... .. . .. ... .. . .. ... .. . .. ... .. . .. ... .. .
+    this.__filterArrayOfObjects = function(key, val) {
+      var i, e, res;
+
+      if (!isObj(self.resultSet[0]))
+        throw new OjoError('key/value can only be passed to Ojo.filter() for an array of objects');
+
+      res = [];
+      if (val instanceof RegExp) {
+        i = 0;
+        while (e = self.resultSet[i]) {
+          if (!isObj(e))
+            throw new OjoError('Invalid element at index ' + i + ' in Ojo.filter(). Must be object');
+          if (key in e && val.test(e[key]))
+            res.push(e);
+          i++;
+        }
+      } else {
+        i = 0;
+        while (e = self.resultSet[i]) {
+          if (!isObj(e))
+            throw new OjoError('Invalid element at index ' + i + ' in Ojo.filter(). Must be object');
+          if (key in e && e[key] == val)
+            res.push(e);
+          i++;
+        }
+      }
+
+      if (res.length == 0)
+        return;
+      return res;
+    } // end Ojo.__filterArrayOfObjects()
 
   } // end Ojo()
 

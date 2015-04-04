@@ -77,8 +77,7 @@ yy: {},
 symbols_: {"error":2,"ojo":3,"path":4,"EOF":5,"DOT":6,"ID":7,"INT":8,"LBRACK":9,"RBRACK":10,"STR":11,"$accept":0,"$end":1},
 terminals_: {2:"error",5:"EOF",6:"DOT",7:"ID",8:"INT",9:"LBRACK",10:"RBRACK",11:"STR"},
 productions_: [0,[3,2],[4,3],[4,3],[4,4],[4,4],[4,4],[4,1]],
-performAction: function anonymous(yytext, yyleng, yylineno, yy, yystate /* action[1] */, $$ /* vstack */, _$ /* lstack */
-/**/) {
+performAction: function anonymous(yytext, yyleng, yylineno, yy, yystate /* action[1] */, $$ /* vstack */, _$ /* lstack */) {
 /* this == yyval */
 
 var $0 = $$.length - 1;
@@ -109,7 +108,7 @@ parseError: function parseError(str, hash) {
     }
 },
 parse: function parse(input) {
-    var self = this, stack = [0], vstack = [null], lstack = [], table = this.table, yytext = '', yylineno = 0, yyleng = 0, recovering = 0, TERROR = 2, EOF = 1;
+    var self = this, stack = [0], tstack = [], vstack = [null], lstack = [], table = this.table, yytext = '', yylineno = 0, yyleng = 0, recovering = 0, TERROR = 2, EOF = 1;
     var args = lstack.slice.call(arguments, 1);
     this.lexer.setInput(input);
     this.lexer.yy = this.yy;
@@ -133,8 +132,12 @@ parse: function parse(input) {
     }
     function lex() {
         var token;
-        token = self.lexer.lex() || EOF;
+        token = tstack.shift() || self.lexer.lex() || EOF;
         if (typeof token !== 'number') {
+            if (token instanceof Array) {
+                tstack = tstack.concat(token.splice(1));
+                token = token[0];
+            }
             token = self.symbols_[token] || token;
         }
         return token;
@@ -583,8 +586,7 @@ stateStackSize:function stateStackSize() {
         return this.conditionStack.length;
     },
 options: {},
-performAction: function anonymous(yy,yy_,$avoiding_name_collisions,YY_START
-/**/) {
+performAction: function anonymous(yy,yy_,$avoiding_name_collisions,YY_START) {
 
 var YYSTATE=YY_START;
 switch($avoiding_name_collisions) {
