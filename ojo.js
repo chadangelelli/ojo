@@ -637,21 +637,14 @@ if (typeof module !== 'undefined' && require.main === module) {
   ojo.js
   2015-04-02
 
-  provides:
-    OjoError, Ojo
-
   author: Chad Angelelli <chad.angelelli@gmail.com>
 
   description:
     Ojo (spanish "eye") is a small interpreter for looking up variables by string. 
     It makes a few guesses about what it is asked to reference and attempts to optimize 
     the query either by manually looking up a variable in simple use cases, 
-    or by running it through a parser for more advanced use cases. If that fails
-    it can optionally attempt to eval() the string.
-
-  options:
-    - allowEval: Boolean - Default is true.
-    - forceParsing: Boolean - Always use full parser. This disables smart-checking/possible optimizing. 
+    or by running it through a parser for more advanced ones. 
+    If that fails it can optionally attempt to eval() the string.
 */
 
 (function(exports) { 
@@ -694,7 +687,7 @@ if (typeof module !== 'undefined' && require.main === module) {
     this.algorithm;
     this.ir;
     this.path;
-    this.options;
+    this.numResults;
 
     // . .. ... .. . .. ... .. . .. ... .. . .. ... .. . .. ... .. .
     this.initVars = function() {
@@ -702,9 +695,10 @@ if (typeof module !== 'undefined' && require.main === module) {
       self.haystack      = {};
       self.components    = [];
       self.numComponents = 0;
+      self.algorithm     = '';
       self.ir            = [];
       self.path          = undefined;
-      self.algorithm     = '';
+      self.numResults    = 0;
     }; // end Ojo.initVars()
 
     // . .. ... .. . .. ... .. . .. ... .. . .. ... .. . .. ... .. .
@@ -745,16 +739,76 @@ if (typeof module !== 'undefined' && require.main === module) {
         self.get(_n, self.haystack);
       }
 
-      return self.path;
+      return self;
     }; // end Ojo.get()
 
     // . .. ... .. . .. ... .. . .. ... .. . .. ... .. . .. ... .. .
-    this.set = function(needle, haystack, value) {
-      var res;
+    this.results = function() {
+      return self.path;
+    };
 
-      return res;
-    }; // end Ojo.set()
+    // . .. ... .. . .. ... .. . .. ... .. . .. ... .. . .. ... .. .
+    this.find = function(key_or_value, value) {
+      var key, _isArr, _isObj, i, k, e, res;
 
+      if (typeof value !== 'undefined')
+        key = key_or_value;
+      else
+        value = key_or_value;
+
+      if ( ! self.path)
+        throw new OjoError('No result set for Find! Call Ojo.get first');
+
+      _isObj = isObj(self.path);
+      _isArr = ! _isObj && isArr(self.path);
+
+      if ( ! _isArr && ! _isObj)
+        throw new OjoError('Find requires an array or object');
+
+      res = [];
+      if (_isArr) {
+        if (key) {
+          if ( ! isObj(self.path[0]))
+            throw new OjoError('key/value can only be passed to Find for an array of objects');
+
+          // loop list
+            // check if element is an object. throw error on false
+        } else {
+          i = 0;
+          while (e = self.path[i]) {
+            print(e);
+            i++;
+          }
+        }
+      } else { // _isObj
+        print("OBJ");
+      }
+
+      /*
+      var path, target, i, k, e, res;
+     
+      path = self.get(needle, haystack, true);
+
+      print('needle: ', needle);
+      print('value: ', value);
+      print('type: ', typeof path[0][path[1]]);
+      jprint(path);
+    
+      if (path) {
+        target = path[0][path[1]];
+        if (isObj(target)) {
+          print('OBJECT');
+        } else if (isArr(target)) {
+          print('ARRAY');
+        } else {
+          throw new OjoError('Find function only works on arrays and objects. ("{needle}")'.intpol(self));
+        }
+      }
+      */
+
+      return self;
+    }; // end Ojo.find()
+    
     // . .. ... .. . .. ... .. . .. ... .. . .. ... .. . .. ... .. .
     this.__simpleLookup = function(components, haystack) {
       var path;
@@ -774,9 +828,11 @@ if (typeof module !== 'undefined' && require.main === module) {
  
     // . .. ... .. . .. ... .. . .. ... .. . .. ... .. . .. ... .. .
     this.__loopLookup = function(components, haystack) {
-      var i = 0,
-          path = haystack,
-          c;
+      var i, c, path;
+
+      i = 0;
+      path = haystack;
+
       while (c = components[i]) {
         if ( ! (c in path)) {
           path = undefined;
@@ -795,9 +851,19 @@ if (typeof module !== 'undefined' && require.main === module) {
   String.prototype.intpol = function(o) {
     return this.replace(/{([^{}]*)}/g, function (a, b) {
       var r = o[b];
-      return isStr(r) || isNum(r) ? r : a;
+      return typeof r === 'string' || typeof r === 'number' ? r : a;
     });
   }; 
+
+  // . .. ... .. . .. ... .. . .. ... .. . .. ... .. . .. ... .. .
+  function isArr(v) { 
+    return Object.prototype.toString.call(v) === '[object Array]'; 
+  }
+
+  // . .. ... .. . .. ... .. . .. ... .. . .. ... .. . .. ... .. .
+  function isObj(v)  { 
+    return Object.prototype.toString.call(v) === '[object Object]'; 
+  }
 
   // . .. ... .. . .. ... .. . .. ... .. . .. ... .. . .. ... .. .
   function print() {
