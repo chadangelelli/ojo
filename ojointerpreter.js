@@ -114,7 +114,7 @@
     }; // end Ojo.get()
 
     // . .. ... .. . .. ... .. . .. ... .. . .. ... .. . .. ... .. .
-    this.results = function() {
+    this.result = function() {
       return self.resultSet;
     };
 

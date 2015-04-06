@@ -183,12 +183,12 @@ for (i=0, l=intepreterTests.length; i < l; i++) {
   try {
     res = ojo.get(test.needle, test.haystack);
     if (test.fn == 'get') {
-      res = ojo.results();
+      res = ojo.result();
     } else if (test.fn == 'filter') {
       if (typeof test.key !== 'undefined') {
-        res = ojo.filter(test.key, test.value).results();
+        res = ojo.filter(test.key, test.value).result();
       } else {
-        res = ojo.filter(test.value).results();
+        res = ojo.filter(test.value).result();
       }
     }
 
@@ -209,9 +209,9 @@ for (i=0, l=intepreterTests.length; i < l; i++) {
 
   if (test.fn == 'get') {
     if (test.needle.indexOf('"') > -1)
-      print("\t<=\tojo.get('{needle}', testData).results()".intpol(test));
+      print("\t<=\tojo.get('{needle}', testData).result()".intpol(test));
     else
-      print('\t<=\tojo.get("{needle}", testData).results()'.intpol(test));
+      print('\t<=\tojo.get("{needle}", testData).result()'.intpol(test));
 
   } else if (test.fn == 'filter') {
     var str = '';
@@ -223,14 +223,14 @@ for (i=0, l=intepreterTests.length; i < l; i++) {
 
     if (typeof test.key !== 'undefined') {
       if (test.value instanceof RegExp)
-        str += '.filter("' + test.key + '", ' + test.value.toString() + ').results()';
+        str += '.filter("' + test.key + '", ' + test.value.toString() + ').result()';
       else
-        str += '.filter("{key}", "{value}").results()'.intpol(test);
+        str += '.filter("{key}", "{value}").result()'.intpol(test);
     } else {
       if (test.value instanceof RegExp)
-        str += '.filter(' + test.value.toString() + ').results()';
+        str += '.filter(' + test.value.toString() + ').result()';
       else
-        str += '.filter("{value}").results()'.intpol(test);
+        str += '.filter("{value}").result()'.intpol(test);
     }
 
     print(str);
