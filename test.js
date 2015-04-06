@@ -87,9 +87,39 @@ var testData = {
   y: [1, 2, 3,3,3, 4,4, 5],
   z: ['a', 1, 'b', 2, 'c', 3,3,3, 'd','d', 4,4, 'e', 5, true, false, false],
   contacts: [
-    { name: 'Alice'  , email: 'alice@test.com'   },
-    { name: 'Bob'    , email: 'bob@test.com'     },
-    { name: 'Charlie', email: 'charlie@test.com' }
+    { name: 'Alice', 
+      email: 'alice@test.com',
+      meta: {
+        created: {
+          date: '2012-03-20T01:11:01Z',
+          user: {
+            id: 1
+          }
+        }
+      }
+    },
+    { name: 'Bob',
+      email: 'bob@test.com',
+      meta: {
+        created: {
+          date: '2013-04-20T00:00:00Z',
+          user: {
+            id: 2
+          }
+        }
+      }
+    },
+    { name: 'Charlie',
+      email: 'charlie@test.com',
+      meta: {
+        created: {
+          date: '2014-01-01T11:01:01Z',
+          user: {
+            id: 3
+          }
+        }
+      }
+    }
   ]
 };
 
@@ -175,7 +205,41 @@ var intepreterTests = [
     value: /test\.com$/,
     match: testData.contacts
   },
-];
+  { fn: 'filter',
+    needle: 'z',
+    haystack: testData,
+    value: function(val) {
+      return val == 'c' || val == 3;
+    },
+    match: ['c', 3, 3, 3]
+  },
+  { fn: 'filter',
+    needle: 'contacts',
+    haystack: testData,
+    key: 'name',
+    value: function(v) {
+      return v === 'Alice';
+    },
+    match: [testData.contacts[0]]
+  }/*,
+  { fn: 'filter',
+    needle: 'contacts',
+    haystack: testData,
+    key: 'meta.created.date',
+    value: /./,
+    match: [testData.contacts[0], testData.contacts[1], testData.contacts[3]]
+  }*//*,
+  { fn: 'filter',
+    needle: 'contacts',
+    haystack: testData,
+    key: 'meta.created.date',
+    value: function(d) {
+      return d > '2013';
+    },
+    match: [testData.contacts[0], testData.contacts[1]]
+  }
+  */
+]; // end tests
 
 for (i=0, l=intepreterTests.length; i < l; i++) {
   test = intepreterTests[i]; 
@@ -224,11 +288,16 @@ for (i=0, l=intepreterTests.length; i < l; i++) {
     if (typeof test.key !== 'undefined') {
       if (test.value instanceof RegExp)
         str += '.filter("' + test.key + '", ' + test.value.toString() + ').result()';
+      else if (typeof test.value === 'function')
+        str += '.filter("' + test.key + '", __FUNCTION__).result()\n\t\t\t' 
+          + test.value.toString().replace(/\n/g, '').replace(/ +/g, ' ') + '\n';
       else
         str += '.filter("{key}", "{value}").result()'.intpol(test);
     } else {
       if (test.value instanceof RegExp)
         str += '.filter(' + test.value.toString() + ').result()';
+      else if (typeof test.value === 'function')
+        str += '.filter(__FUNCTION__).result()\n\t\t\t' + test.value.toString().replace(/\n/g, '').replace(/ +/g, ' ') + '\n';
       else
         str += '.filter("{value}").result()'.intpol(test);
     }

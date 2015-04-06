@@ -205,6 +205,12 @@
             res.push(e);
           i++;
         }
+      } else if (typeof val === 'function') {
+        while (e = self.resultSet[i]) {
+          if (val(e))
+            res.push(e);
+          i++;
+        }
       } else {
         while (e = self.resultSet[i]) {
           if (e == val)
@@ -232,6 +238,13 @@
           if (!isObj(e))
             throw new OjoError('Invalid element at index ' + i + ' in Ojo.filter(). Must be object');
           if (key in e && val.test(e[key]))
+            res.push(e);
+          i++;
+        }
+      } else if (typeof val === 'function') {
+        i = 0;
+        while (e = self.resultSet[i]) {
+          if (val(e[key]))
             res.push(e);
           i++;
         }
