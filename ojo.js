@@ -704,30 +704,27 @@ if (typeof module !== 'undefined' && require.main === module) {
     }; // end Ojo.initVars()
 
     // . .. ... .. . .. ... .. . .. ... .. . .. ... .. . .. ... .. .
-    this.get = function(needle, haystack) {
+    this.get = function(needle, haystack, _skipSettingResult) {
+      var components, numComponents, algorithm, path, _n;
+
       if (!needle.length)
         throw new OjoError('Invalid Ojo needle "{needle}"'.intpol(self));
 
-      // reset vars.
-      self.initVars();
-      // set specific values needed.
-      self.needle = needle;
-      self.haystack = haystack;
-      self.components = needle.split('.');
-      self.numComponents = self.components.length;
+      components = needle.split('.');
+      numComponents = components.length;
 
       // Simple lookup? (No nested variables.)
       if (needle.indexOf('[') === -1) { 
-        if (self.numComponents < 3) {
-          self.algorithm = 'simple';
-          self.path = self.__simpleLookup(self.components, self.haystack);
+        if (numComponents < 3) {
+          algorithm = 'simple';
+          path = self.__simpleLookup(components, haystack);
         } else {
-          self.algorithm = 'loop';
-          self.path = self.__loopLookup(self.components, self.haystack);
+          algorithm = 'loop';
+          path = self.__loopLookup(components, haystack);
         }
 
-      } else if (/\[[a-zA-Z]/.test(self.needle)) { // Query has nested vars, use parser and/or eval.
-        self.algorithm = 'advanced';
+      } else if (/\[[a-zA-Z]/.test(needle)) { // Query has nested vars, use parser and/or eval.
+        algorithm = 'advanced';
 
         /* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
          * This block is unfinished. 
@@ -737,14 +734,28 @@ if (typeof module !== 'undefined' && require.main === module) {
         throw new OjoError("Ojo Advanced algorithm unfinshed. Can't have nested vars yet!");
 
       } else { // No nested vars. Convert brackets to dot notation and call get()
-        var _n = self.needle.replace(/[\]"']/g, '').replace('[', '.');
-        self.get(_n, self.haystack);
+        _n = needle.replace(/[\]"']/g, '').replace('[', '.');
+        path = self.get(_n, haystack, true);
       }
 
-      if (self.path)
-        self.resultSet = self.path;
-      else
+      // internal call? return value.
+      if (_skipSettingResult)
+        return path;
+
+      // reset vars.
+      self.initVars();
+      // set specific values needed.
+      self.needle = needle;
+      self.haystack = haystack;
+      self.path = path;
+      self.components = components; 
+      self.numComponents = numComponents;
+      self.algorithm = algorithm;
+
+      if (!path)
         return;
+      // else
+      self.resultSet = self.path; 
       return self;
     }; // end Ojo.get()
 
@@ -764,7 +775,7 @@ if (typeof module !== 'undefined' && require.main === module) {
       _isArr = !_isObj && isArr(self.resultSet);
 
       if (!_isArr && !_isObj)
-        throw new OjoError('Find requires an array or object');
+        throw new OjoError('Ojo.filter() requires an array or object');
 
       if (typeof val !== 'undefined')
         key = keyOrVal;
@@ -776,19 +787,11 @@ if (typeof module !== 'undefined' && require.main === module) {
           res = self.__filterArray(val); 
         else
           res = self.__filterArrayOfObjects(key, val);
-
-        if (!res)
-          return;
-
-        self.resultSet = res;
-
-      } else if (key in self.resultSet && self.resultSet[key] == val) {
-        res = self.resultSet[key];
+      } else {
+        res = self.__filterObject(key, val);
       }
 
-      if (!res)
-        return;
-
+      self.resultSet = res;
       return self;
     }; // end Ojo.filter()
     
@@ -860,8 +863,27 @@ if (typeof module !== 'undefined' && require.main === module) {
     } // end Ojo.__filterArray()
 
     // . .. ... .. . .. ... .. . .. ... .. . .. ... .. . .. ... .. .
+    this.__filterObject = function(key, val) {
+      var set, target;
+
+      set = self.resultSet;
+      target = self.get(key, set, true);
+
+      if (target) {
+        if (val instanceof RegExp && val.test(target)) {
+          return set;
+        } else if (typeof val === 'function' && val(target)) {
+          return set;
+        } else if (target == val) {
+          return set;
+        }
+      }
+      return;
+    } // end Ojo.__filterObject()
+
+    // . .. ... .. . .. ... .. . .. ... .. . .. ... .. . .. ... .. .
     this.__filterArrayOfObjects = function(key, val) {
-      var i, e, res;
+      var i, e, target, res;
 
       if (!isObj(self.resultSet[0]))
         throw new OjoError('key/value can only be passed to Ojo.filter() for an array of objects');
@@ -872,14 +894,16 @@ if (typeof module !== 'undefined' && require.main === module) {
         while (e = self.resultSet[i]) {
           if (!isObj(e))
             throw new OjoError('Invalid element at index ' + i + ' in Ojo.filter(). Must be object');
-          if (key in e && val.test(e[key]))
+          target = self.get(key, e, true);
+          if (key in e && val.test(target))
             res.push(e);
           i++;
         }
       } else if (typeof val === 'function') {
         i = 0;
         while (e = self.resultSet[i]) {
-          if (val(e[key]))
+          target = self.get(key, e, true);
+          if (val(target))
             res.push(e);
           i++;
         }
@@ -888,7 +912,8 @@ if (typeof module !== 'undefined' && require.main === module) {
         while (e = self.resultSet[i]) {
           if (!isObj(e))
             throw new OjoError('Invalid element at index ' + i + ' in Ojo.filter(). Must be object');
-          if (key in e && e[key] == val)
+          target = self.get(key, e, true);
+          if (typeof target !== 'undefined' && target == val)
             res.push(e);
           i++;
         }

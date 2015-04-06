@@ -1,5 +1,8 @@
 #!/usr/local/bin/node
 
+if (typeof window !== 'undefined')
+  alert("It is not wise to load Ojo's test script in a browser!");
+
 var ojoparser = require('./ojoparser');
 var Ojo = require('./ojo').Ojo;
 
@@ -206,6 +209,13 @@ var intepreterTests = [
     match: testData.contacts
   },
   { fn: 'filter',
+    needle: 'contacts[0]',
+    haystack: testData,
+    key: 'name',
+    value: 'Alice',
+    match: testData.contacts[0]
+  },
+  { fn: 'filter',
     needle: 'z',
     haystack: testData,
     value: function(val) {
@@ -221,14 +231,21 @@ var intepreterTests = [
       return v === 'Alice';
     },
     match: [testData.contacts[0]]
-  }/*,
+  },
   { fn: 'filter',
-    needle: 'contacts',
+    needle: 'contacts.0',
     haystack: testData,
     key: 'meta.created.date',
     value: /./,
-    match: [testData.contacts[0], testData.contacts[1], testData.contacts[3]]
-  }*//*,
+    match: testData.contacts[0]
+  },
+  { fn: 'filter',
+    needle: 'contacts[1]',
+    haystack: testData,
+    key: 'meta.created.date',
+    value: '2013-04-20T00:00:00Z',
+    match: testData.contacts[1]
+  },
   { fn: 'filter',
     needle: 'contacts',
     haystack: testData,
@@ -236,9 +253,15 @@ var intepreterTests = [
     value: function(d) {
       return d > '2013';
     },
-    match: [testData.contacts[0], testData.contacts[1]]
+    match: [testData.contacts[1], testData.contacts[2]]
+  },
+  { fn: 'filter',
+    needle: 'a.b',
+    haystack: testData,
+    key: 'c.0.d',
+    value: 1,
+    match: testData.a.b
   }
-  */
 ]; // end tests
 
 for (i=0, l=intepreterTests.length; i < l; i++) {
@@ -269,7 +292,7 @@ for (i=0, l=intepreterTests.length; i < l; i++) {
     failed++;
   }
  
-  print('\ttest ' + (i+1) + ' .................. ' + (success ? 'OK' : 'EPIC FAIL!') + ' (lookup algorithm: ' + ojo.algorithm + ') ');
+  print('\t' + (success ? 'OK:   ' : 'FAIL:') + ' test ' + (i+1) + ' .................. ' + '(lookup algorithm: ' + ojo.algorithm + ') ');
 
   if (test.fn == 'get') {
     if (test.needle.indexOf('"') > -1)
@@ -290,14 +313,14 @@ for (i=0, l=intepreterTests.length; i < l; i++) {
         str += '.filter("' + test.key + '", ' + test.value.toString() + ').result()';
       else if (typeof test.value === 'function')
         str += '.filter("' + test.key + '", __FUNCTION__).result()\n\t\t\t' 
-          + test.value.toString().replace(/\n/g, '').replace(/ +/g, ' ') + '\n';
+          + test.value.toString().replace(/\n/g, '').replace(/ +/g, ' ');
       else
         str += '.filter("{key}", "{value}").result()'.intpol(test);
     } else {
       if (test.value instanceof RegExp)
         str += '.filter(' + test.value.toString() + ').result()';
       else if (typeof test.value === 'function')
-        str += '.filter(__FUNCTION__).result()\n\t\t\t' + test.value.toString().replace(/\n/g, '').replace(/ +/g, ' ') + '\n';
+        str += '.filter(__FUNCTION__).result()\n\t\t\t' + test.value.toString().replace(/\n/g, '').replace(/ +/g, ' ');
       else
         str += '.filter("{value}").result()'.intpol(test);
     }
